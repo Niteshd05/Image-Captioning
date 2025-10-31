@@ -183,9 +183,9 @@ if camera_image is not None:
 
     # Message + TTS
     if currency:
-        message = f"I can see an Indian {currency} note. {caption}"
+        message = f"I can see an Indian {currency} note."
     else:
-        message = f"No recognizable currency detected. {caption}"
+        message = f"{caption}"
 
     st.success(message)
     speak_currency(message)
@@ -197,3 +197,4 @@ if camera_image is not None:
                 os.remove(f)
         except PermissionError:
             st.warning(f"Could not delete temporary file {f}")
+
