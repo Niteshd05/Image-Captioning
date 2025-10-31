@@ -8,7 +8,6 @@ import os
 import io
 import requests
 import base64
-import time
 
 # ------------------------------------------------
 # Streamlit Configuration
@@ -22,18 +21,21 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 @st.cache_resource
 def load_models():
     # Roboflow currency detection
+    st.info("🔄 Loading Roboflow model...")
     rf = Roboflow(api_key="2po24idSl5m93Vfr6ZtF")
     project = rf.workspace().project("indian-currency-detection-elfyf")
     currency_model = project.version(1).model
 
-    # BLIP-2 model
+    # BLIP-2 model (Flan-T5-XL)
+    st.info("🔄 Loading BLIP-2 model...")
     model_id = "Salesforce/blip2-flan-t5-xl"
-    processor = Blip2Processor.from_pretrained(model_id)
+    processor = Blip2Processor.from_pretrained(model_id, use_fast=True)
     caption_model = Blip2ForConditionalGeneration.from_pretrained(
-        model_id, torch_dtype=torch.float16
+        model_id, dtype=torch.float16
     ).to(DEVICE)
 
     return currency_model, processor, caption_model
+
 
 currency_model, processor, caption_model = load_models()
 
@@ -41,7 +43,7 @@ currency_model, processor, caption_model = load_models()
 # ElevenLabs Text-to-Speech
 # ------------------------------------------------
 ELEVENLABS_API_KEY = st.secrets.get("ELEVENLABS_API_KEY", "")
-VOICE_ID = "Rachel"  # Female voice available on free plan
+VOICE_ID = "Rachel"  # Female voice (Free-tier available)
 
 def speak_currency(text):
     """Generate speech with ElevenLabs and autoplay."""
@@ -62,14 +64,14 @@ def speak_currency(text):
             if response.status_code == 200:
                 audio_bytes = response.content
             else:
-                raise Exception("ElevenLabs request failed.")
+                raise Exception(f"ElevenLabs request failed: {response.text}")
         else:
             raise Exception("Missing ElevenLabs API key.")
     except Exception as e:
         st.warning(f"TTS error: {e}")
         return
 
-    # Stream the audio in the browser
+    # Autoplay in browser
     audio_base64 = base64.b64encode(audio_bytes).decode()
     audio_html = f"""
         <audio autoplay="true">
@@ -92,7 +94,7 @@ def generate_caption(image: Image.Image):
     return caption.capitalize()
 
 # ------------------------------------------------
-# Currency Detection
+# Currency Detection (Roboflow)
 # ------------------------------------------------
 def detect_currency(image_path):
     result = currency_model.predict(image_path)
@@ -127,17 +129,14 @@ if uploaded_files:
                 image.save(tmp.name)
                 temp_path = tmp.name
 
-            # Generate caption
             with st.spinner("🧠 Generating description..."):
                 caption = generate_caption(image)
 
-        # Detect currency
         with st.spinner("💵 Detecting currency..."):
             currency, annotated_path = detect_currency(temp_path)
 
         st.image(annotated_path, caption="Annotated Result", use_container_width=True)
 
-        # Combine caption and detection
         if currency:
             message = f"I see an Indian {currency} note. {caption}"
         else:
@@ -185,7 +184,6 @@ if img_file:
     st.success(message)
     speak_currency(message)
 
-    # Cleanup
     for f in [temp_file, annotated_path]:
         try:
             if os.path.exists(f):
