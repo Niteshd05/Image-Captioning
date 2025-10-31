@@ -8,4 +8,5 @@ playsound==1.2.2
 numpy
 opencv-python
 huggingface-hub
+gTTS
 roboflow
