@@ -3,11 +3,10 @@ from roboflow import Roboflow
 from gtts import gTTS
 from PIL import Image
 import io
-import cv2
 import tempfile
 import torch
 from transformers import BlipProcessor, BlipForConditionalGeneration
-import os, time, base64, requests
+import os, base64, requests
 
 # -------------------------------
 # Streamlit Config
@@ -19,7 +18,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # ElevenLabs Config
 # -------------------------------
 ELEVENLABS_API_KEY = st.secrets.get("ELEVENLABS_API_KEY", None)
-VOICE_ID = "Elli"  # Free-tier voice
+VOICE_ID = "Elli"  # Free-tier female voice
 
 # -------------------------------
 # Model Loader (Cached)
@@ -159,51 +158,42 @@ if uploaded_files:
 st.markdown("---")
 
 # -------------------------------
-# Webcam Capture
+# Webcam Section (Using Streamlit camera_input)
 # -------------------------------
 st.subheader("📷 Capture via Webcam")
 
-if st.button("Start 5-Second Webcam Capture"):
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        st.error("Could not access webcam.")
+camera_image = st.camera_input("Take a photo")
+
+if camera_image is not None:
+    # Save captured frame temporarily
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+        tmp.write(camera_image.getbuffer())
+        temp_file = tmp.name
+
+    # Open image safely
+    with Image.open(temp_file) as image:
+        with st.spinner("🧠 Generating description..."):
+            caption = generate_caption(image)
+
+    # Detect currency
+    with st.spinner("💵 Detecting currency..."):
+        currency, annotated_path = detect_currency(temp_file)
+
+    st.image(annotated_path, caption="Webcam Annotated Image", use_container_width=True)
+
+    # Message + TTS
+    if currency:
+        message = f"I can see an Indian {currency} note. {caption}"
     else:
-        st.info("Capturing frames for 5 seconds...")
-        start_time = time.time()
-        last_frame = None
-        while time.time() - start_time < 5:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            last_frame = frame.copy()
-        cap.release()
-        st.success("Capture complete!")
+        message = f"No recognizable currency detected. {caption}"
 
-        if last_frame is not None:
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-                cv2.imwrite(tmp.name, last_frame)
-                temp_file = tmp.name
+    st.success(message)
+    speak_currency(message)
 
-            with Image.open(temp_file) as image:
-                with st.spinner("🧠 Generating description..."):
-                    caption = generate_caption(image)
-
-            with st.spinner("💵 Detecting currency..."):
-                currency, annotated_path = detect_currency(temp_file)
-
-            st.image(annotated_path, caption="Webcam Annotated Image", use_container_width=True)
-
-            if currency:
-                message = f"I can see an Indian {currency} note. {caption}"
-            else:
-                message = f"No recognizable currency detected. {caption}"
-
-            st.success(message)
-            speak_currency(message)
-
-            for f in [temp_file, annotated_path]:
-                try:
-                    if os.path.exists(f):
-                        os.remove(f)
-                except PermissionError:
-                    st.warning(f"Could not delete temporary file {f}")
+    # Cleanup temp files
+    for f in [temp_file, annotated_path]:
+        try:
+            if os.path.exists(f):
+                os.remove(f)
+        except PermissionError:
+            st.warning(f"Could not delete temporary file {f}")
