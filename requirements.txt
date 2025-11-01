@@ -3,8 +3,8 @@ streamlit==1.39.0
 
 # Vision + Detection
 roboflow==1.1.28
+opencv-python-headless==4.8.0.74
 ultralytics==8.3.25
-opencv-python-headless==4.10.0.84
 Pillow==10.4.0
 numpy==1.26.4
 
@@ -21,8 +21,6 @@ gTTS==2.5.3
 requests==2.32.3
 
 # Utility
-tempfile2==0.1.2
 python-dotenv==1.0.1
-
-# Optional (for base64 and audio handling)
+tempfile2==0.1.2
 pydub==0.25.1
