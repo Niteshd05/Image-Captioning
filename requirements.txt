@@ -1,17 +1,28 @@
-streamlit>=1.20
-ultralytics>=8.0.0
-transformers>=4.30.0
-sentencepiece
-Pillow
-pyttsx3
-playsound==1.2.2
-numpy
-opencv-python
-huggingface-hub
-gTTS
-roboflow
+# Core Web Framework
+streamlit==1.39.0
 
-# --- Added dependencies ---
-torch>=2.0.0
-requests
-opencv-python-headless>=4.8.0
+# Vision + Detection
+roboflow==1.1.28
+ultralytics==8.3.25
+opencv-python-headless==4.10.0.84
+Pillow==10.4.0
+numpy==1.26.4
+
+# NLP + Transformers
+torch==2.4.0
+transformers==4.44.2
+sentencepiece==0.2.0
+accelerate==0.33.0
+huggingface-hub==0.25.1
+safetensors==0.4.4
+
+# Speech (TTS)
+gTTS==2.5.3
+requests==2.32.3
+
+# Utility
+tempfile2==0.1.2
+python-dotenv==1.0.1
+
+# Optional (for base64 and audio handling)
+pydub==0.25.1
