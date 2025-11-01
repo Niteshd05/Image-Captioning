@@ -12,4 +12,5 @@ roboflow>=1.1.26
 accelerate
 safetensors
 gtts
+cv2
 
