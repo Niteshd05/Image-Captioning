@@ -6,10 +6,13 @@ Pillow
 pyttsx3
 playsound==1.2.2
 numpy
-opencv-python-headless>=4.8.0
+opencv-python
 huggingface-hub
 gTTS
 roboflow
+
+# --- Added dependencies ---
 torch>=2.0.0
 requests
 base64
+opencv-python-headless>=4.8.0
